@@ -170,34 +170,44 @@ requisitos necesarios.
 Return; un bool del estado de cumplimiento.
 */
 bool checkName(string name, Agency agency){
-    char secondName = name[name.find(' ') + 1];
-    bool isCorrect = true;
-    if(name[0] > 65 && name[0] < 90){
-        for(int i = 1; i < name.find(' ') + 1; i++){
-            if((name[i] < 65 || name[i] > 90)){
-                error(ERR_NAME);
-                isCorrect = false;
+    bool isFormatCorrect = true;
+
+    if(name.empty() || name[0] == ' '){
+        isFormatCorrect = false;
+    }
+    else{
+        bool newWord = true;
+        for (size_t i = 0; i < name.size(); i++) {
+            if (name[i] == ' ') {
+                newWord = true; // El siguiente caracter empieza una palabra
+            } else if (newWord) {
+                // Si es inicio de palabra, DEBE ser mayúscula ('A'-'Z')
+                if (name[i] < 'A' || name[i] > 'Z') {
+                    isFormatCorrect = false;
+                    i = name.size();
+                }
+                newWord = false;
+            } else {
+                // Si NO es inicio de palabra, DEBE ser minúscula ('a'-'z')
+                if (name[i] < 'a' || name[i] > 'z') {
+                    isFormatCorrect = false;
+                    i = name.size();
+                }
             }
         }
     }
 
-    if(secondName > 65 && secondName < 90){
-        for(int i = name.find(' ') + 2; i < name.size(); i++){
-            if((name[i] < 65 || name[i] > 90)){
-                error(ERR_NAME);
-                isCorrect = false;
-            }
+    if (!isFormatCorrect) {
+            error(ERR_NAME);
         }
-    }
 
-    for(unsigned int i = 0; i < agency.players.size(); i++){
-        if(name == agency.players[i].name){
-            isCorrect = false;
+    // 3. Comprobar si el jugador ya existe en la agencia
+    for (unsigned int i = 0; i < agency.players.size(); i++) {
+        if (name == agency.players[i].name) {
             error(ERR_NAME_EXISTS);
-            i = agency.players.size();
         }
     }
-    return isCorrect;
+    return isFormatCorrect;
 }
 
 /*
@@ -248,14 +258,20 @@ Funcion para comprobar si el id introducido pertenece a algun jugador
 registrado.
 Return: un boolano que dice si existe o no ese jugador.
 */
-bool checkId(Agency agency, unsigned int id){
+bool checkId(Agency agency, string id){
     bool existsId = false;
+    unsigned int intId;
     vector<Player> players = agency.players;
 
-    for(unsigned int i = 0; i < players.size(); i++){
-        if(id == players[i].id){
+    if(id.empty()){
+        existsId = false;
+    }
+
+    intId = stoi(id);
+
+    for(size_t i = 0; i < agency.players.size(); i++){
+        if(intId == agency.players[i].id){
             existsId = true;
-            i = players.size();
         }
     }
 
@@ -267,26 +283,79 @@ Funcion para borrar jugadores de la agencia
 Return: void
 */
 void deletePlayer(Agency &agency){
-    unsigned int id;
+    string id;
+    unsigned int intId;
     bool isIdCorrect;
 
     cout << "Enter player id: ";
-    cin >> id;
-    cin.clear();
+    getline(cin, id);
 
     isIdCorrect = checkId(agency, id);
 
-    if((!isIdCorrect) || (id == 0)){
+    if(!isIdCorrect){
         error(ERR_PLAYER_NOT_EXISTS);
     }
     else{
+        intId = stoi(id);
         for(unsigned int i = 0; i < agency.players.size(); i++){
-            if(agency.players[i].id == id){
+            if(agency.players[i].id == intId){
                 agency.players.erase(agency.players.begin() + i);
                 i = agency.players.size();
             }
         }
     }
+}
+
+bool checkFormat(string ratings){
+    bool formatError = false;
+        if (ratings.empty()) {
+            formatError = true;
+        } else {
+            for (size_t i = 0; i < ratings.size(); i++) {
+                char c = ratings[i];
+                // Permitimos solo dígitos, el signo menos y la coma
+                if (!isdigit(c) && c != '-' && c != ',') {
+                    formatError = true;
+                    break;
+                }
+                // El '-' solo puede ir al principio de un número (índice 0 o justo después de una coma)
+                if (c == '-' && i != 0 && ratings[i - 1] != ',') {
+                    formatError = true; 
+                    break;
+                }
+                // Evitar comas al inicio, al final, o comas consecutivas (",,")
+                if (c == ',' && (i == 0 || i == ratings.size() - 1 || ratings[i - 1] == ',')) {
+                    formatError = true; 
+                    break;
+                }
+            }
+        }
+
+    return formatError;
+}
+
+bool checkRange(string ratings, vector<int> tempRatings){
+    bool isCorrect = true;
+    size_t start = 0;
+    size_t end = ratings.find(',');
+
+    while(end != string::npos){
+        int value = stoi(ratings.substr(start, end - start));
+        if(value < -50 || value > 50){
+            isCorrect = false;
+        }
+        tempRatings.push_back(value);
+
+        start = end + 1;
+        end = ratings.find(',', start);
+
+        int lastVal = stoi(ratings.substr(start));
+        if (lastVal < -50 || lastVal > 50) {
+            isCorrect = false;
+        }
+        tempRatings.push_back(lastVal);
+    }
+    return isCorrect;
 }
 
 /*
@@ -295,19 +364,41 @@ return: void
 */
 void addPlayerRating(Agency &agency){
     bool idCorrect;
-    int id;
-    Player tempPlayer;
+    bool validFormat;
+    string id;
+    string ratings;
+    vector<int> tempRatings;
+    unsigned int intId;
 
     cout << "Enter player id: ";
-    cin >> id;
-    cin.clear();
+    getline(cin, id);
 
-    idCorrect = checkId(agency, id);
-    if(!idCorrect || id == 0){
+    idCorrect = checkId(agency, id); //Comprobación si existe un jugador con ese id
+    if(!idCorrect){
         error(ERR_PLAYER_NOT_EXISTS);
     }
     else{
-        cout << "Enter ratings (comma-separated): ";
+        intId = stoi(id);
+        do{
+            cout << "Enter ratings (comma-separated): ";
+            getline(cin, ratings);
+            validFormat = checkFormat(ratings);
+
+            if(!validFormat){
+                error(ERR_RATING_FORMAT);
+            }
+            else{
+                validFormat = checkRange(ratings, tempRatings);
+                if(!validFormat){
+                    error(ERR_RATING);
+                    tempRatings.clear();
+                }
+            }
+
+        }while(!validFormat);
+        for (unsigned int i = 0; i < tempRatings.size(); i++) {
+        agency.players[intId].ratings.push_back(tempRatings[i]);
+        }
     }
 }
 
