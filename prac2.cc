@@ -169,37 +169,54 @@ void showPlayers(Agency agency){
     }
 }
 
+
+void checkNameFormat(string names, bool &correctFormat){
+    bool newWord = true;
+        for (size_t i = 0; i < names.size(); i++) {
+            if(names.length() == 1){
+                correctFormat = false;
+                i = names.size();
+            }
+            else{
+                if (newWord) {
+                // Si es inicio de palabra, DEBE ser mayúscula ('A'-'Z')
+                if (names[i] < 'A' || names[i] > 'Z') {
+                    correctFormat = false;
+                    i = names.size();
+                }
+                newWord = false;
+                } else {
+                    // Si NO es inicio de palabra, DEBE ser minúscula ('a'-'z')
+                    if (names[i] < 'a' || names[i] > 'z') {
+                        correctFormat = false;
+                        i = names.size();
+                    }
+                }
+            }
+            
+        }
+}
+
 /*
 Función de comrpobacion si el nombre de jugador o equipo cumple con los
 requisitos necesarios.
 Return; un bool del estado de cumplimiento.
 */
-bool checkName(string name, Agency agency){
+bool checkName(string fullName, Agency agency){
     bool isFormatCorrect = true;
+    string name;
+    string surname;
 
-    if(name.empty() || name[0] == ' '){
+    if(fullName.empty() || fullName[0] == ' '){
         isFormatCorrect = false;
     }
     else{
-        bool newWord = true;
-        for (size_t i = 0; i < name.size(); i++) {
-            if (name[i] == ' ') {
-                newWord = true; // El siguiente caracter empieza una palabra
-            } else if (newWord) {
-                // Si es inicio de palabra, DEBE ser mayúscula ('A'-'Z')
-                if (name[i] < 'A' || name[i] > 'Z') {
-                    isFormatCorrect = false;
-                    i = name.size();
-                }
-                newWord = false;
-            } else {
-                // Si NO es inicio de palabra, DEBE ser minúscula ('a'-'z')
-                if (name[i] < 'a' || name[i] > 'z') {
-                    isFormatCorrect = false;
-                    i = name.size();
-                }
-            }
-        }
+        stringstream names (fullName);
+        getline(names, name, ' ');
+        checkNameFormat(name, isFormatCorrect);
+
+        getline(names, surname);
+        checkNameFormat(surname, isFormatCorrect);
     }
 
     if (!isFormatCorrect) {
@@ -536,9 +553,56 @@ void showRankings(Agency agency){
     }
 }
 
-void importCsv(){
-    string fileName;
+void parseData(Agency &agency, string line){
+    stringstream data(line);
     Player tempPlayer;
+    string name;
+    string team;
+    string dorsal;
+    string position;
+    string ratings;
+    int rating;
+    bool correctName;
+
+    getline(data, name, ',');
+    correctName = checkName(name, agency);
+    
+    if(correctName){
+        tempPlayer.name = name;
+        getline(data, team, ',');
+        correctName = checkName(team, agency);
+        
+        if(correctName){
+            tempPlayer.team = team;
+            getline(data, dorsal, ',');
+            
+            if(dorsal >= "0" && dorsal <= "99"){
+                tempPlayer.dorsal = stoi(dorsal);
+                getline(data, position, ',');
+                
+                if(position >= "1" && position <= "5"){
+                    tempPlayer.position = stoi(position);
+                    
+                    while(getline(data, ratings, ',')){
+                        rating = stoi(ratings);
+                        
+                        if(rating >= -50 && rating <= 50){
+                            tempPlayer.ratings.push_back(rating);
+                        }
+                    }
+                    
+                    tempPlayer.id = agency.nextId;
+                    agency.players.push_back(tempPlayer);
+                    agency.nextId ++;
+                }
+            }
+        }
+    }
+}
+
+void importCsv(Agency &agency){
+    string fileName;
+    string line;
 
     cout << "Enter filename: ";
     getline(cin, fileName); 
@@ -546,7 +610,10 @@ void importCsv(){
     ifstream file(fileName);
 
     if(file.is_open()){
-        
+        while(getline(file, line)){
+            parseData(agency, line);
+        }
+        file.close();
     }
     else{
         error(ERR_FILE);
@@ -558,7 +625,7 @@ void importCsv(){
 Función para importar o exportar datos en ficheros CSV
 o binarios
 */
-void importExport(){
+void importExport(Agency &agency){
     char option;
     do{
         showImportExportMenu();
@@ -567,6 +634,7 @@ void importExport(){
 
         switch(option){
             case '1': // Import from CSV
+            importCsv(agency);
                 break;
             case '2': // Export from CSV
                 break;
@@ -614,7 +682,7 @@ int main(int argc, char *argv[]){
                 showRankings(agency);//Falta por implementar
                 break;
             case '6': // Import/export menu
-                importExport(); //Falta por terminar
+                importExport(agency); //Falta por terminar
                 break;
             case 'q':
                 break;
