@@ -157,8 +157,8 @@ void showPlayers(Agency agency){
         if(agency.players[i].ratings.size() > 0){
             cout << "Game | Rating" << endl;
 
-            for(unsigned int j = 0; i < agency.players[i].ratings.size(); i++){
-                cout << j << " | " << agency.players[i].ratings[j] << endl; 
+            for(unsigned int j = 0; j < agency.players[i].ratings.size(); j++){
+                cout << j + 1 << " | " << agency.players[i].ratings[j] << endl; 
             }
         }
     }
@@ -229,15 +229,15 @@ void addPlayer(Agency &agency){
         correct = checkName(tempPlayer.team, agency);
     }while(!correct);
     do{
-        tempPlayer.dorsal = 0;
+        tempPlayer.dorsal = -1;
         cout << "Enter dorsal: ";
         cin >> tempPlayer.dorsal;
-        if(tempPlayer.dorsal <= 0 || tempPlayer.dorsal > 99){
+        if(tempPlayer.dorsal < 0 || tempPlayer.dorsal > 99){
             error(ERR_DORSAL);
         }
         cin.clear();
         while(cin.get() != '\n');
-    }while(tempPlayer.dorsal <= 0 || tempPlayer.dorsal > 99);
+    }while(tempPlayer.dorsal < 0 || tempPlayer.dorsal > 99);
     do{
         cout << "Enter position: ";
         cin >> tempPlayer.position;
@@ -258,29 +258,32 @@ Funcion para comprobar si el id introducido pertenece a algun jugador
 registrado.
 Return: un boolano que dice si existe o no ese jugador.
 */
-
 bool checkId(Agency agency, string id){
-    bool isCorrect = true;
+    bool isCorrect = false;
     unsigned int intId;
 
     if(id.empty()){
         isCorrect = false;
     }
 
-    intId = stoi(id);
-    for(unsigned int i = 0; i < agency.players.size(); i++){
-        if(intId == agency.players[i].id){
-            isCorrect = true;
-        }
-        else{
-            isCorrect = false;
+    else{
+        intId = stoi(id);
+        for(unsigned int i = 0; i < agency.players.size(); i++){
+            if(intId == agency.players[i].id){
+                isCorrect = true;
+                i = agency.players.size();
+            }
         }
     }
     return isCorrect;
 }
 
+/*
+Funcion para encontrar la posicion en la que esta el jugador deseado en funcion de su id
+Return: el indice del vector en el que se encuentra el jugador
+*/
 int findPlayer(Agency agency, string id){
-    unsigned int playerIndex = -1;
+    int playerIndex = -1;
     unsigned int intId = stoi(id);
 
     for(unsigned int i = 0; i < agency.players.size(); i++){
@@ -315,6 +318,10 @@ void deletePlayer(Agency &agency){
     }
 }
 
+/*
+Funcion para comprobar que el formato de las valoraciones esta correcto
+Return: un bool que es true si está correcto
+*/
 bool checkFormat(string ratings){
     bool isCorrect = true;
 
@@ -342,6 +349,10 @@ bool checkFormat(string ratings){
     return isCorrect;
 }
 
+/*
+Funcion para comprobar que las valoraciones entran dentro del rango establecido
+Return: un bool que dice si se cumple el rango o no.
+*/
 bool checkRange(string ratings, vector<int> &tempRatings){
     bool isCorrect = true;
     size_t start = 0;
@@ -367,6 +378,10 @@ bool checkRange(string ratings, vector<int> &tempRatings){
     return isCorrect;
 }
 
+/*
+Funcion para añadir valoraciones a un jugador en funcion de su id
+Return; void
+*/
 void addPlayerRating(Agency &agency){
     string playerId;
     string ratings;
@@ -398,6 +413,7 @@ void addPlayerRating(Agency &agency){
                 isRangeCorrect = checkRange(ratings, tempRatings);
                 if(!isRangeCorrect){
                     error(ERR_RATING);
+                    tempRatings.clear();
                 }
                 else{
                     for(unsigned int i = 0; i < tempRatings.size(); i++){
@@ -414,7 +430,24 @@ void addPlayerRating(Agency &agency){
 Funcion para mostrar un ranking de los jugadores en funcion de su valoracion media
 return: void
 */
-void showRankings(Agency agency);
+void showRankings(Agency agency){
+    vector<float> averageRating;
+    float tempAverageRating = 0;
+
+    for(unsigned int i = 0; i < agency.players.size(); i++){
+        if(agency.players[i].ratings.size() > 0){
+            for(unsigned int j = 0; i < agency.players[i].ratings.size(); j++){
+                tempAverageRating = tempAverageRating + agency.players[i].ratings[j];
+            }
+            tempAverageRating = tempAverageRating/agency.players[i].ratings.size();
+            averageRating.push_back(tempAverageRating);
+            tempAverageRating = 0;
+        }
+    }
+    if(averageRating.size() == 0){
+        error(ERR_NO_PLAYERS_WITH_RATINGS);
+    }
+}
 
 /*
 Función para importar o exportar datos en ficheros CSV
@@ -467,7 +500,7 @@ int main(int argc, char *argv[]){
                 addPlayer(agency);
                 break;
             case '3': // Add player rating
-                 //Fakta por implementar
+                addPlayerRating(agency); //Fakta por implementar
                 break;
             case '4':
                 deletePlayer(agency); // Delete player

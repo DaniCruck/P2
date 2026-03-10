@@ -30,6 +30,22 @@ Option: Enter player name: Enter team name: Enter dorsal: Enter position: [Menu]
 5- Show ranking
 6- Import/export
 q- Quit
+Option: Enter player id: Enter ratings (comma-separated): [Menu]
+1- Show players
+2- Add player
+3- Add player rating
+4- Delete player
+5- Show ranking
+6- Import/export
+q- Quit
+Option: Enter player id: Enter ratings (comma-separated): [Menu]
+1- Show players
+2- Add player
+3- Add player rating
+4- Delete player
+5- Show ranking
+6- Import/export
+q- Quit
 Option: [Menu]
 1- Show players
 2- Add player
@@ -38,85 +54,4 @@ Option: [Menu]
 5- Show ranking
 6- Import/export
 q- Quit
-Option: Id: 1
-Name: Facundo Campazzo
-Team: Real Madrid
-Dorsal: 7
-Position: Small Forward
-Id: 2
-Name: Jan Vesely
-Team: Fc Barcelona
-Dorsal: 6
-Position: Power Forward
-[Menu]
-1- Show players
-2- Add player
-3- Add player rating
-4- Delete player
-5- Show ranking
-6- Import/export
-q- Quit
-Option: Id: 1
-Name: Facundo Campazzo
-Team: Real Madrid
-Dorsal: 7
-Position: Small Forward
-Id: 2
-Name: Jan Vesely
-Team: Fc Barcelona
-Dorsal: 6
-Position: Power Forward
-[Menu]
-1- Show players
-2- Add player
-3- Add player rating
-4- Delete player
-5- Show ranking
-6- Import/export
-q- Quit
-Option: ERROR: wrong menu option
-[Menu]
-1- Show players
-2- Add player
-3- Add player rating
-4- Delete player
-5- Show ranking
-6- Import/export
-q- Quit
-Option: ERROR: wrong menu option
-[Menu]
-1- Show players
-2- Add player
-3- Add player rating
-4- Delete player
-5- Show ranking
-6- Import/export
-q- Quit
-Option: Id: 1
-Name: Facundo Campazzo
-Team: Real Madrid
-Dorsal: 7
-Position: Small Forward
-Id: 2
-Name: Jan Vesely
-Team: Fc Barcelona
-Dorsal: 6
-Position: Power Forward
-[Menu]
-1- Show players
-2- Add player
-3- Add player rating
-4- Delete player
-5- Show ranking
-6- Import/export
-q- Quit
-Option: ERROR: wrong menu option
-[Menu]
-1- Show players
-2- Add player
-3- Add player rating
-4- Delete player
-5- Show ranking
-6- Import/export
-q- Quit
-Option: Enter player id: 
+Option: 
