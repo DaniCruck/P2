@@ -3,6 +3,7 @@
 #include <vector>
 #include <fstream>
 #include <cstring>
+#include <sstream>
 
 using namespace std;
 
@@ -37,6 +38,11 @@ struct BinAgency{
     unsigned int nextId;
 };
 
+struct TPlayerRanking{
+    int playerIndex;
+    float averageRating;
+};
+
 // Tipos de errores posibles
 enum Error{
     ERR_ARGS,
@@ -51,7 +57,6 @@ enum Error{
     ERR_RATING,
     ERR_RATING_FORMAT
 };
-
 /*
 Función que muestra los distintos tipos de errores posibles
 e: tipo de error a mostrar
@@ -323,32 +328,45 @@ Funcion para comprobar que el formato de las valoraciones esta correcto
 Return: un bool que es true si está correcto
 */
 bool checkFormat(string ratings){
+    stringstream rating(ratings);
+    string individualRating;
     bool isCorrect = true;
 
     if (ratings.empty()) {
-            isCorrect = false;
-    } else {
-        for (size_t i = 0; i < ratings.size(); i++) {
-            char c = ratings[i];
+        isCorrect = false;
+    } 
+    else if (ratings[0] == ',' || ratings[ratings.size() - 1] == ',') {
+        isCorrect = false;
+    } 
+    else {
+        while (isCorrect && getline(rating, individualRating, ',')) {
             
-            // Solo permitimos números, signos menos y comas
-            if (!isdigit(c) && c != '-' && c != ',') {
+            // Si el individualRating está vacío, había dos comas seguidas (ej: "10,,20")
+            if (individualRating.empty()) {
                 isCorrect = false;
-            }
-            // El menos '-' solo puede ir al principio o justo después de una coma
-            if (c == '-' && i != 0 && ratings[i - 1] != ',') {
-                isCorrect = false; 
-            }
-            // Evitar comas al inicio, al final, o comas consecutivas (",,")
-            if (c == ',' && (i == 0 || i == ratings.size() - 1 || ratings[i - 1] == ',')) {
-                isCorrect = false; 
+            } else {
+                // 4. Analizamos los caracteres.
+                for (size_t i = 0; i < individualRating.size() && isCorrect; i++) {
+                    char c = individualRating[i];
+
+                    // a) Comprobamos si es el primer carácter y es un signo menos
+                    if (i == 0 && c == '-') {
+                        // Evitamos un guion suelto (ej: "10,-,20")
+                        if (individualRating.size() == 1) {
+                            isCorrect = false;
+                        }
+                    } 
+                    // b) Si no es un guion válido al inicio, comprobamos que sea un número
+                    else if (c < '0' || c > '9') {
+                        isCorrect = false;
+                    }
+                }
             }
         }
     }
 
     return isCorrect;
 }
-
 /*
 Funcion para comprobar que las valoraciones entran dentro del rango establecido
 Return: un bool que dice si se cumple el rango o no.
@@ -404,7 +422,7 @@ void addPlayerRating(Agency &agency){
         do{
             cout << "Enter ratings (comma-separated): ";
             getline(cin, ratings);
-
+            
             isFormatCorrect = checkFormat(ratings);
             if(!isFormatCorrect){
                 error(ERR_RATING_FORMAT);
@@ -427,27 +445,114 @@ void addPlayerRating(Agency &agency){
 }
 
 /*
+Función que calcula la valoración media de un jugador
+player: jugador del que se va a calcular la nota media
+return: un float con el valor medio de todas sus valoraciones
+*/
+float calculateAverage(Player player) {
+    float sum = 0;
+    for (unsigned int i = 0; i < player.ratings.size(); i++) {
+        sum += player.ratings[i];
+    }
+    return sum / player.ratings.size();
+}
+
+/*
+Función que ordena de mayor a menor un vector temporal de ranking según la nota media
+ranking: vector de tipo TPlayerRanking pasado por referencia para modificarlo directamente
+return: void
+*/
+void sortRanking(vector<TPlayerRanking> &ranking) {
+    // Recorremos todo el vector
+    for (unsigned int i = 0; i < ranking.size(); i++) {
+        unsigned int maxIndex = i;
+
+        // Buscamos si hay algún otro jugador en el resto del vector con una nota mayor
+        for (unsigned int j = i + 1; j < ranking.size(); j++) {
+            if (ranking[j].averageRating > ranking[maxIndex].averageRating) {
+                maxIndex = j; // Guardamos la posición del nuevo máximo
+            }
+        }
+
+        // Si encontramos un jugador con mayor nota, intercambiamos sus posiciones
+        if (maxIndex != i) {
+            TPlayerRanking temp = ranking[i];
+            ranking[i] = ranking[maxIndex];
+            ranking[maxIndex] = temp;
+        }
+    }
+}
+
+/*
 Funcion para mostrar un ranking de los jugadores en funcion de su valoracion media
 return: void
 */
 void showRankings(Agency agency){
-    vector<float> averageRating;
+    vector<TPlayerRanking> ranking;
+    TPlayerRanking tempRanking;
     float tempAverageRating = 0;
 
-    for(unsigned int i = 0; i < agency.players.size(); i++){
-        if(agency.players[i].ratings.size() > 0){
-            for(unsigned int j = 0; i < agency.players[i].ratings.size(); j++){
-                tempAverageRating = tempAverageRating + agency.players[i].ratings[j];
-            }
-            tempAverageRating = tempAverageRating/agency.players[i].ratings.size();
-            averageRating.push_back(tempAverageRating);
-            tempAverageRating = 0;
-        }
-    }
-    if(averageRating.size() == 0){
+    if(agency.players.size() < 1){
         error(ERR_NO_PLAYERS_WITH_RATINGS);
     }
+    else{
+        for(unsigned int i = 0; i < agency.players.size(); i++){
+        if(agency.players[i].ratings.size() > 0){
+            tempAverageRating = calculateAverage(agency.players[i]);
+            tempRanking.playerIndex = i;
+            tempRanking.averageRating = tempAverageRating;
+            ranking.push_back(tempRanking);
+            tempAverageRating = 0;
+            }
+        }
+
+        sortRanking(ranking);
+
+        cout << "Ranking | Id | Name | Dorsal | Position | Rating" << endl;
+        for(unsigned int i = 0; i < ranking.size(); i++){
+            cout << i + 1 << " | ";
+            cout << agency.players[ranking[i].playerIndex].id << " | ";
+            cout << agency.players[ranking[i].playerIndex].name << " | ";
+            cout << agency.players[ranking[i].playerIndex].dorsal << " | ";
+            switch(agency.players[ranking[i].playerIndex].position){
+                case 1:
+                    cout << "Point Guard" << " | ";
+                    break;
+                case 2:
+                    cout << "Shooting Guard" << " | ";
+                    break;
+                case 3:
+                    cout << "Small Forward" << " | ";
+                    break;
+                case 4:
+                    cout << "Power Forward" << " | ";
+                    break;
+                case 5:
+                    cout << "Center" << " | ";
+                    break;
+            }
+            cout << ranking[i].averageRating << endl; 
+        }
+    }
 }
+
+void importCsv(){
+    string fileName;
+    Player tempPlayer;
+
+    cout << "Enter filename: ";
+    getline(cin, fileName); 
+
+    ifstream file(fileName);
+
+    if(file.is_open()){
+        
+    }
+    else{
+        error(ERR_FILE);
+    }
+}
+
 
 /*
 Función para importar o exportar datos en ficheros CSV
@@ -463,11 +568,11 @@ void importExport(){
         switch(option){
             case '1': // Import from CSV
                 break;
-            case '2': //Export from CSV
+            case '2': // Export from CSV
                 break;
-            case '3': //
+            case '3': // Import from bin
                 break;
-            case '4':
+            case '4': // Export to bin
                 break;
             case 'b':
                 break;
@@ -506,7 +611,7 @@ int main(int argc, char *argv[]){
                 deletePlayer(agency); // Delete player
                 break;
             case '5': // Show ranking
-                //Falta por implementar
+                showRankings(agency);//Falta por implementar
                 break;
             case '6': // Import/export menu
                 importExport(); //Falta por terminar
