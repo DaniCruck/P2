@@ -620,6 +620,42 @@ void importCsv(Agency &agency){
     }
 }
 
+void transferData();
+
+void exportCsv(Agency agency){
+    string fileName;
+
+    cout << "Enter filename: ";
+    getline(cin, fileName);
+    if(fileName.empty()){
+        error(ERR_FILE);
+    }
+    else{
+        ofstream file(fileName);
+        if(file.is_open()){
+            for(unsigned int i = 0; i < agency.players.size(); i++){
+                file << agency.players[i].name << ',' << agency.players[i].team << ',';
+                file << agency.players[i].dorsal << ',' << agency.players[i].position;
+                if(agency.players[i].ratings.size() == 0){
+                    file << endl;
+                }
+                else{
+                    file << ',';
+                    for(unsigned j = 0; j < agency.players[i].ratings.size(); j++){
+                        file << agency.players[i].ratings[j];
+                        if(j == agency.players[i].ratings.size() - 1){
+                            file << endl;
+                        }
+                        else{
+                            file << ',';
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+}
 
 /*
 Función para importar o exportar datos en ficheros CSV
@@ -637,6 +673,7 @@ void importExport(Agency &agency){
             importCsv(agency);
                 break;
             case '2': // Export from CSV
+            exportCsv(agency);
                 break;
             case '3': // Import from bin
                 break;
