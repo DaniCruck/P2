@@ -169,7 +169,10 @@ void showPlayers(Agency agency){
     }
 }
 
-
+/*
+Funcion para comprobar el formato de nombre en general
+Return: modifica por referencia el bool de formato.
+*/
 void checkNameFormat(string names, bool &correctFormat){
     bool newWord = true;
         for (size_t i = 0; i < names.size(); i++) {
@@ -553,6 +556,10 @@ void showRankings(Agency agency){
     }
 }
 
+/*
+Función que transforma los datos de un formato de texto plano al formato de registros
+Return: void
+*/
 void parseData(Agency &agency, string line){
     stringstream data(line);
     Player tempPlayer;
@@ -600,6 +607,11 @@ void parseData(Agency &agency, string line){
     }
 }
 
+/*
+Función que realiza la importacion de datos tras parsearlos a los formatos necesarios de
+registros
+Return: void
+*/
 void importCsv(Agency &agency){
     string fileName;
     string line;
@@ -620,8 +632,10 @@ void importCsv(Agency &agency){
     }
 }
 
-void transferData();
-
+/*
+Funcion que realiza la transformacion de datos a al formato requerido en un archivo csv
+return: void
+*/
 void exportCsv(Agency agency){
     string fileName;
 
@@ -658,11 +672,118 @@ void exportCsv(Agency agency){
 }
 
 /*
+FUncin para transferir los datos de jugador del registro binario al registro normal
+Return: void
+*/
+void transferPlayerData(Player &player, BinPlayer BinPlayer){
+    player.id = BinPlayer.id;
+    player.name = BinPlayer.name;
+    player.team = BinPlayer.team;
+    player.dorsal = BinPlayer.dorsal;
+    player.position = BinPlayer.position;
+    player.ratings.clear();
+}
+
+/*
+Funcion para cargar datos desde un archivo binario
+Return: void
+*/
+void loadData(Agency &agency){
+    string option;
+    string fileName;
+    BinAgency tempAgency;
+    BinPlayer binTempPlayer;
+    Player tempPlayer;
+    int rating;
+    bool confirm = false;
+
+    do{
+        cout << "All data will be erased. Continue? [y/n]: ";
+        getline(cin, option);
+        if(option == "y" || option == "Y" || option == "n" || option == "N"){
+            confirm = true;
+        }
+    }while(!confirm);
+    if(option == "n" || option == "N"){
+    }
+    else{
+        option.clear();
+        cout << "Enter filename: ";
+        getline(cin, fileName);
+        ifstream file(fileName, ios::binary);
+        if(file.is_open()){
+            agency.players.clear();
+            file.read((char*)&tempAgency, sizeof(tempAgency));
+            agency.name = tempAgency.name;
+            agency.nextId = tempAgency.nextId;
+            while(file.read((char*)&binTempPlayer, sizeof(binTempPlayer))){
+                transferPlayerData(tempPlayer, binTempPlayer);
+                for(unsigned int i = 0; i < binTempPlayer.numRatings; i++){
+                    file.read((char*)&rating, sizeof(int));
+                    tempPlayer.ratings.push_back(rating);
+                }
+                agency.players.push_back(tempPlayer);
+            }
+            file.close();
+        }
+        else{
+            error(ERR_FILE);
+        }
+    }
+}
+
+/*
+Funcion para guardar los datos en un fichero binario
+Return: void
+*/
+void saveData(Agency agency){
+    string fileName;
+    BinAgency tempAgency;
+    BinPlayer tempPlayer;
+
+    cout << "Enter filename: ";
+    getline(cin, fileName);
+
+    ofstream file(fileName, ios::binary);
+    if(file.is_open()){
+        strcpy(tempAgency.name, agency.name.c_str());
+        tempAgency.nextId = agency.nextId;
+        tempAgency.name[kMAXSTRING - 1] = '\0';
+        file.write((char*)&tempAgency, sizeof(tempAgency));
+
+        for(unsigned int i = 0; i < agency.players.size(); i++){
+            tempPlayer.id = agency.players[i].id;
+            tempPlayer.dorsal = agency.players[i].dorsal;
+            tempPlayer.position = agency.players[i].position;
+            tempPlayer.numRatings = agency.players[i].ratings.size();
+
+            strcpy(tempPlayer.name, agency.players[i].name.c_str());
+            tempPlayer.name[kMAXSTRING - 1] = '\0';
+            strcpy(tempPlayer.team, agency.players[i].team.c_str());
+            tempPlayer.team[kMAXSTRING - 1] = '\0';
+
+            file.write(reinterpret_cast<const char*>(&tempPlayer), sizeof(BinPlayer));
+            
+            for (unsigned int j = 0; j < agency.players[i].ratings.size(); j++) {
+                int rating = agency.players[i].ratings[j];
+                file.write(reinterpret_cast<const char*>(&rating), sizeof(int));
+            }
+    }
+        file.close();
+    }
+    else{
+        error(ERR_FILE);
+    }
+}
+
+/*
 Función para importar o exportar datos en ficheros CSV
 o binarios
+return: void
 */
 void importExport(Agency &agency){
     char option;
+    cin.clear();
     do{
         showImportExportMenu();
         cin >> option;
@@ -676,8 +797,10 @@ void importExport(Agency &agency){
             exportCsv(agency);
                 break;
             case '3': // Import from bin
+                loadData(agency);
                 break;
             case '4': // Export to bin
+                saveData(agency);
                 break;
             case 'b':
                 break;
@@ -687,6 +810,47 @@ void importExport(Agency &agency){
     }while(option != 'b');
 }
 
+void importFromArgumentI(Agency &agency, string fileName){
+    ifstream file(fileName);
+    string line;
+
+    if(file.is_open()){
+        while(getline(file, line)){
+            parseData(agency, line);
+        }
+        file.close();
+    }
+    else{
+        error(ERR_FILE);
+    }
+}
+
+void importFromArgumentL(Agency &agency, string fileName){
+    BinAgency tempAgency;
+    BinPlayer binTempPlayer;
+    Player tempPlayer;
+    int rating;
+    
+    ifstream file(fileName, ios::binary);
+    if(file.is_open()){
+            agency.players.clear();
+            file.read((char*)&tempAgency, sizeof(tempAgency));
+            agency.name = tempAgency.name;
+            agency.nextId = tempAgency.nextId;
+            while(file.read((char*)&binTempPlayer, sizeof(binTempPlayer))){
+                transferPlayerData(tempPlayer, binTempPlayer);
+                for(unsigned int i = 0; i < binTempPlayer.numRatings; i++){
+                    file.read((char*)&rating, sizeof(int));
+                    tempPlayer.ratings.push_back(rating);
+                }
+                agency.players.push_back(tempPlayer);
+            }
+            file.close();
+        }
+        else{
+            error(ERR_FILE);
+        }
+}
 /*
 Función principal del programa, que muestra el menú principal por pantalla y permite al usuario elegir una opción
 return: 0
@@ -697,7 +861,23 @@ int main(int argc, char *argv[]){
     agency.nextId=1;
 
     char option;
+
+    if(argc > 0){
+        for(int i = 0; i < 0; i++){
+            if(argv[i] == "-i"){
+                importFromArgumentI(agency, argv[i+1]);
+            }
+            else if(argv[i] == "-l"){
+                importFromArgumentL(agency, argv[i+1]);
+            }
+            else{
+                error(ERR_ARGS);
+            }
+        }
+    }
+
     do{
+
         showMainMenu();
         cin >> option;
         cin.get();
