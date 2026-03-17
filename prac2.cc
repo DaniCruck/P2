@@ -388,6 +388,7 @@ bool checkFormat(string ratings){
     return isCorrect;
 }
 /*
+
 Funcion para comprobar que las valoraciones entran dentro del rango establecido
 Return: un bool que dice si se cumple el rango o no.
 */
@@ -810,29 +811,31 @@ void importExport(Agency &agency){
     }while(option != 'b');
 }
 
-void importFromArgumentI(Agency &agency, string fileName){
-    ifstream file(fileName);
-    string line;
-
-    if(file.is_open()){
-        while(getline(file, line)){
-            parseData(agency, line);
+/*
+Función para importar datos de un archivo a partir un argumento
+Return: void
+*/
+void importFromArgument(Agency agency, int argumentType, string fileName){
+    if(argumentType == 0){
+        ifstream file(fileName);
+        string line;
+        if(file.is_open()){
+            while(getline(file, line)){
+                parseData(agency, line);
+            }
+            file.close();
         }
-        file.close();
+        else{
+            error(ERR_FILE);
+        }
     }
-    else{
-        error(ERR_FILE);
-    }
-}
-
-void importFromArgumentL(Agency &agency, string fileName){
-    BinAgency tempAgency;
-    BinPlayer binTempPlayer;
-    Player tempPlayer;
-    int rating;
-    
-    ifstream file(fileName, ios::binary);
-    if(file.is_open()){
+    else if(argumentType == 1){
+        BinAgency tempAgency;
+        BinPlayer binTempPlayer;
+        Player tempPlayer;
+        int rating;
+        ifstream file(fileName, ios::binary);
+        if(file.is_open()){
             agency.players.clear();
             file.read((char*)&tempAgency, sizeof(tempAgency));
             agency.name = tempAgency.name;
@@ -850,7 +853,41 @@ void importFromArgumentL(Agency &agency, string fileName){
         else{
             error(ERR_FILE);
         }
+    }
 }
+
+/*
+Funcion para procesar ala cantidad de argumentos introducidos
+Return: un booleano que verifica que se ham introducido correctamente los argumentos
+*/
+bool processArguments(int argc, char *argv[], string &importFile, string &loadFile) {
+    bool isCorrect = true; // Control de validez de argumentos
+
+    for (int i = 1; i < argc && isCorrect; i++) {
+        string currentArg = string(argv[i]); // Argumento actual evaluado
+
+        if (currentArg == "-i") {
+            if (importFile != "" || i + 1 >= argc) {
+                isCorrect = false; 
+            } else {
+                importFile = string(argv[i + 1]); 
+                i++; // Saltamos la lectura del nombre del fichero
+            }
+        } else if (currentArg == "-l") {
+            if (loadFile != "" || i + 1 >= argc) {
+                isCorrect = false; 
+            } else {
+                loadFile = string(argv[i + 1]); 
+                i++; // Saltamos la lectura del nombre del fichero
+            }
+        } else {
+            isCorrect = false; // Argumento desconocido
+        }
+    }
+
+    return isCorrect;
+}
+
 /*
 Función principal del programa, que muestra el menú principal por pantalla y permite al usuario elegir una opción
 return: 0
@@ -859,25 +896,25 @@ int main(int argc, char *argv[]){
     Agency agency;
     agency.name="ProSports Agency";
     agency.nextId=1;
-
     char option;
+    string importFile = ""; // Archivo de texto a importar
+    string loadFile = ""; // Archivo binario a cargar
+    bool argsCorrect = true; // Control de la corrección de argumentos
 
-    if(argc > 0){
-        for(int i = 0; i < 0; i++){
-            if(argv[i] == "-i"){
-                importFromArgumentI(agency, argv[i+1]);
-            }
-            else if(argv[i] == "-l"){
-                importFromArgumentL(agency, argv[i+1]);
-            }
-            else{
-                error(ERR_ARGS);
-            }
+    argsCorrect = processArguments(argc, argv, importFile, loadFile);
+    if(!argsCorrect){
+        error(ERR_ARGS);
+    }
+    else{
+        if(importFile != ""){
+            importFromArgument(agency, 0, importFile);
+        }
+        if(loadFile != ""){
+            importFromArgument(agency, 1, loadFile);
         }
     }
 
     do{
-
         showMainMenu();
         cin >> option;
         cin.get();
