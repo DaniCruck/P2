@@ -129,9 +129,9 @@ void showMainMenu(){
          << "Option: ";
 }
 /*
-Funcion para mostrar a todos los jugadores que pertenecn a
-la agencia.
-Return: Void
+Función para mostrar a todos los jugadores de la agencia.
+agency: registro de la agencia declarada en main.
+return: void
 */
 void showPlayers(Agency agency){
     for(unsigned int i = 0; i < agency.players.size(); i++){
@@ -170,8 +170,10 @@ void showPlayers(Agency agency){
 }
 
 /*
-Funcion para comprobar el formato de nombre en general
-Return: modifica por referencia el bool de formato.
+Función para comprobar el formato de nombre en general, donde se modifica el booleano.
+names: los distintos nombres que recibe la función para comprobar su formato.
+correctFormat: booleano que comprueba si el formato es correcto
+return: void
 */
 void checkNameFormat(string names, bool &correctFormat){
     bool newWord = true;
@@ -201,28 +203,30 @@ void checkNameFormat(string names, bool &correctFormat){
 }
 
 /*
-Función de comrpobacion si el nombre de jugador o equipo cumple con los
-requisitos necesarios.
-Return; un bool del estado de cumplimiento.
+Función que comprueba si el nombre cumple los requisitos para añadir al
+jugador
+fullName: Nombre del jugador o del equipo
+agency: registro de la agencia declarada en main
+return: un bool del estado de cumplimiento.
 */
 bool checkName(string fullName, Agency agency){
-    bool isFormatCorrect = true;
+    bool isNameCorrect = true;
     string name;
     string surname;
 
     if(fullName.empty() || fullName[0] == ' '){
-        isFormatCorrect = false;
+        isNameCorrect = false;
     }
     else{
         stringstream names (fullName);
         getline(names, name, ' ');
-        checkNameFormat(name, isFormatCorrect);
+        checkNameFormat(name, isNameCorrect);
 
         getline(names, surname);
-        checkNameFormat(surname, isFormatCorrect);
+        checkNameFormat(surname, isNameCorrect);
     }
 
-    if (!isFormatCorrect) {
+    if (!isNameCorrect) {
             error(ERR_NAME);
         }
 
@@ -232,12 +236,13 @@ bool checkName(string fullName, Agency agency){
             error(ERR_NAME_EXISTS);
         }
     }
-    return isFormatCorrect;
+    return isNameCorrect;
 }
 
 /*
-Fncion para poder añadir jugadores adentro de la agencia
-Return: void
+Funcion para poder añadir jugadores adentro de la agencia
+agency: registro de la agencia declarado en main. 
+return: void
 */
 void addPlayer(Agency &agency){
     Player tempPlayer;
@@ -279,33 +284,37 @@ void addPlayer(Agency &agency){
 }
 
 /*
-Funcion para comprobar si el id introducido pertenece a algun jugador
+Función para comprobar si el id introducido pertenece a algun jugador
 registrado.
-Return: un boolano que dice si existe o no ese jugador.
+agency: registro de la agencia
+id: cadena donde se almacena el id del jugador deseado.
+return: un boolano que dice si existe o no ese jugador.
 */
 bool checkId(Agency agency, string id){
-    bool isCorrect = false;
+    bool isIdCorrect = false;
     unsigned int intId;
 
     if(id.empty()){
-        isCorrect = false;
+        isIdCorrect = false;
     }
 
     else{
         intId = stoi(id);
         for(unsigned int i = 0; i < agency.players.size(); i++){
             if(intId == agency.players[i].id){
-                isCorrect = true;
+                isIdCorrect = true;
                 i = agency.players.size();
             }
         }
     }
-    return isCorrect;
+    return isIdCorrect;
 }
 
 /*
-Funcion para encontrar la posicion en la que esta el jugador deseado en funcion de su id
-Return: el indice del vector en el que se encuentra el jugador
+Función para encontrar la posicion en la que esta el jugador deseado en función de su id
+agency: registro de la agencia.
+id: cadena del id del jugador deseado.
+return: el indice del vector en el que se encuentra el jugador
 */
 int findPlayer(Agency agency, string id){
     int playerIndex = -1;
@@ -321,8 +330,9 @@ int findPlayer(Agency agency, string id){
 }
 
 /*
-Funcion para borrar jugadores de la agencia
-Return: void
+Función para borrar jugadores de la agencia
+agency: registro de la agencia.
+return: void
 */
 void deletePlayer(Agency &agency){
     string id;
@@ -344,63 +354,66 @@ void deletePlayer(Agency &agency){
 }
 
 /*
-Funcion para comprobar que el formato de las valoraciones esta correcto
-Return: un bool que es true si está correcto
+Función para comprobar que el formato de las valoraciones esta correcto.
+ratings: cadena de valoraciones del jugador.
+return: un bool que es true si está correcto
 */
 bool checkFormat(string ratings){
     stringstream rating(ratings);
     string individualRating;
-    bool isCorrect = true;
+    bool isFormatCorrect = true;
 
     if (ratings.empty()) {
-        isCorrect = false;
+        isFormatCorrect = false;
     } 
     else if (ratings[0] == ',' || ratings[ratings.size() - 1] == ',') {
-        isCorrect = false;
+        isFormatCorrect = false;
     } 
     else {
-        while (isCorrect && getline(rating, individualRating, ',')) {
+        while (isFormatCorrect && getline(rating, individualRating, ',')) {
             
             // Si el individualRating está vacío, había dos comas seguidas (ej: "10,,20")
             if (individualRating.empty()) {
-                isCorrect = false;
+                isFormatCorrect = false;
             } else {
                 // 4. Analizamos los caracteres.
-                for (size_t i = 0; i < individualRating.size() && isCorrect; i++) {
+                for (size_t i = 0; i < individualRating.size() && isFormatCorrect; i++) {
                     char c = individualRating[i];
 
                     // a) Comprobamos si es el primer carácter y es un signo menos
                     if (i == 0 && c == '-') {
                         // Evitamos un guion suelto (ej: "10,-,20")
                         if (individualRating.size() == 1) {
-                            isCorrect = false;
+                            isFormatCorrect = false;
                         }
                     } 
                     // b) Si no es un guion válido al inicio, comprobamos que sea un número
                     else if (c < '0' || c > '9') {
-                        isCorrect = false;
+                        isFormatCorrect = false;
                     }
                 }
             }
         }
     }
 
-    return isCorrect;
+    return isFormatCorrect;
 }
-/*
 
-Funcion para comprobar que las valoraciones entran dentro del rango establecido
-Return: un bool que dice si se cumple el rango o no.
+/*
+Función para comprobar que las valoraciones entran dentro del rango establecido.
+ratings: cadena de valoraciones que introduce el usuario.
+tempRatings: vector de valoraciones temporal para almacenar esas valoraciones.
+return: un bool que dice si se cumple el rango o no.
 */
 bool checkRange(string ratings, vector<int> &tempRatings){
-    bool isCorrect = true;
+    bool isRangeCorrect = true;
     size_t start = 0;
     size_t end = ratings.find(',');
 
     while(end != string::npos){
         int value = stoi(ratings.substr(start, end - start));
         if(value < -50 || value > 50){
-            isCorrect = false;
+            isRangeCorrect = false;
         }
         tempRatings.push_back(value);
 
@@ -410,16 +423,17 @@ bool checkRange(string ratings, vector<int> &tempRatings){
     
     int lastVal = stoi(ratings.substr(start));
     if (lastVal < -50 || lastVal > 50) {
-        isCorrect = false;
+        isRangeCorrect = false;
     }
     tempRatings.push_back(lastVal);
     
-    return isCorrect;
+    return isRangeCorrect;
 }
 
 /*
-Funcion para añadir valoraciones a un jugador en funcion de su id
-Return; void
+Función para añadir valoraciones a un jugador en función de su id
+agency: registro de la agencia.
+return: void
 */
 void addPlayerRating(Agency &agency){
     string playerId;
@@ -505,7 +519,8 @@ void sortRanking(vector<TPlayerRanking> &ranking) {
 }
 
 /*
-Funcion para mostrar un ranking de los jugadores en funcion de su valoracion media
+Función para mostrar un ranking de los jugadores en función de su valoración media.
+agency: registro de la agencia.
 return: void
 */
 void showRankings(Agency agency){
@@ -558,8 +573,10 @@ void showRankings(Agency agency){
 }
 
 /*
-Función que transforma los datos de un formato de texto plano al formato de registros
-Return: void
+Función que transforma los datos de un formato de texto plano al formato de registros.
+agency: registro de la agencia.
+line: linea de texto plano del archivo de texto a importar.
+return: void
 */
 void parseData(Agency &agency, string line){
     stringstream data(line);
@@ -570,17 +587,17 @@ void parseData(Agency &agency, string line){
     string position;
     string ratings;
     int rating;
-    bool correctName;
+    bool isNameCorrect;
 
     getline(data, name, ',');
-    correctName = checkName(name, agency);
+    isNameCorrect = checkName(name, agency);
     
-    if(correctName){
+    if(isNameCorrect){
         tempPlayer.name = name;
         getline(data, team, ',');
-        correctName = checkName(team, agency);
+        isNameCorrect = checkName(team, agency);
         
-        if(correctName){
+        if(isNameCorrect){
             tempPlayer.team = team;
             getline(data, dorsal, ',');
             
@@ -610,8 +627,9 @@ void parseData(Agency &agency, string line){
 
 /*
 Función que realiza la importacion de datos tras parsearlos a los formatos necesarios de
-registros
-Return: void
+registros.
+agency; registro de la agencia.
+return: void
 */
 void importCsv(Agency &agency){
     string fileName;
@@ -634,7 +652,8 @@ void importCsv(Agency &agency){
 }
 
 /*
-Funcion que realiza la transformacion de datos a al formato requerido en un archivo csv
+Función que realiza la transformacion de datos a al formato requerido en un archivo csv
+agency: registro de la agencia.
 return: void
 */
 void exportCsv(Agency agency){
@@ -673,21 +692,24 @@ void exportCsv(Agency agency){
 }
 
 /*
-FUncin para transferir los datos de jugador del registro binario al registro normal
-Return: void
+Función para transferir los datos de jugador del registro binario al registro normal.
+player: registro del jugador en formato normal.
+binPlayer: registro de jugador en formato estático para ficheros binarios.
+return: void
 */
-void transferPlayerData(Player &player, BinPlayer BinPlayer){
-    player.id = BinPlayer.id;
-    player.name = BinPlayer.name;
-    player.team = BinPlayer.team;
-    player.dorsal = BinPlayer.dorsal;
-    player.position = BinPlayer.position;
+void transferPlayerData(Player &player, BinPlayer binPlayer){
+    player.id = binPlayer.id;
+    player.name = binPlayer.name;
+    player.team = binPlayer.team;
+    player.dorsal = binPlayer.dorsal;
+    player.position = binPlayer.position;
     player.ratings.clear();
 }
 
 /*
-Funcion para cargar datos desde un archivo binario
-Return: void
+Función para cargar datos desde un archivo binario.
+agency: registro de la agencia.
+return: void
 */
 void loadData(Agency &agency){
     string option;
@@ -734,8 +756,9 @@ void loadData(Agency &agency){
 }
 
 /*
-Funcion para guardar los datos en un fichero binario
-Return: void
+Función para guardar los datos en un fichero binario.
+agency: registro de la agencia.
+return: void
 */
 void saveData(Agency agency){
     string fileName;
@@ -779,7 +802,8 @@ void saveData(Agency agency){
 
 /*
 Función para importar o exportar datos en ficheros CSV
-o binarios
+o binarios.
+agency: registro de la agencia.
 return: void
 */
 void importExport(Agency &agency){
@@ -812,10 +836,13 @@ void importExport(Agency &agency){
 }
 
 /*
-Función para importar datos de un archivo a partir un argumento
-Return: void
+Función para importar datos de un archivo a partir un argumento.
+agency: registro de la agencia.
+argumentType: entero del argumento para decir si es un fichero binario (1) o fichero de texto. (0)
+fileName: cadena donde se almacena el nombre / ubicación del fichero.
+return: void
 */
-void importFromArgument(Agency agency, int argumentType, string fileName){
+void importFromArgument(Agency &agency, int argumentType, string fileName){
     if(argumentType == 0){
         ifstream file(fileName);
         string line;
@@ -857,8 +884,11 @@ void importFromArgument(Agency agency, int argumentType, string fileName){
 }
 
 /*
-Funcion para procesar ala cantidad de argumentos introducidos
-Return: un booleano que verifica que se ham introducido correctamente los argumentos
+Función para procesar la cantidad de argumentos introducidos.
+argc y argv[]: parámetros de argumentos del programa.
+importFile: cadena usada especialmente para ficheros de texto donde se almacena su nombre / ubicación.
+loadFile: cadena usada especialmente para ficheros binarios donde se almacena su nombre / ubicación. 
+return: un booleano que verifica que se han introducido correctamente los argumentos
 */
 bool processArguments(int argc, char *argv[], string &importFile, string &loadFile) {
     bool isCorrect = true; // Control de validez de argumentos
@@ -906,43 +936,43 @@ int main(int argc, char *argv[]){
         error(ERR_ARGS);
     }
     else{
-        if(importFile != ""){
-            importFromArgument(agency, 0, importFile);
-        }
         if(loadFile != ""){
             importFromArgument(agency, 1, loadFile);
         }
+        if(importFile != ""){
+            importFromArgument(agency, 0, importFile);
+        }
+    
+        do{
+            showMainMenu();
+            cin >> option;
+            cin.get();
+
+            switch(option){
+                case '1': // Show players
+                    showPlayers(agency);
+                    break;
+                case '2': // Add player
+                    addPlayer(agency);
+                    break;
+                case '3': // Add player rating
+                    addPlayerRating(agency); //Fakta por implementar
+                    break;
+                case '4':
+                    deletePlayer(agency); // Delete player
+                    break;
+                case '5': // Show ranking
+                    showRankings(agency);//Falta por implementar
+                    break;
+                case '6': // Import/export menu
+                    importExport(agency); //Falta por terminar
+                    break;
+                case 'q':
+                    break;
+                default: error(ERR_OPTION);
+            }
+        }while(option!='q');
     }
 
-    do{
-        showMainMenu();
-        cin >> option;
-        cin.get();
-
-        switch(option){
-            case '1': // Show players
-                showPlayers(agency);
-                break;
-            case '2': // Add player
-                addPlayer(agency);
-                break;
-            case '3': // Add player rating
-                addPlayerRating(agency); //Fakta por implementar
-                break;
-            case '4':
-                deletePlayer(agency); // Delete player
-                break;
-            case '5': // Show ranking
-                showRankings(agency);//Falta por implementar
-                break;
-            case '6': // Import/export menu
-                importExport(agency); //Falta por terminar
-                break;
-            case 'q':
-                break;
-            default: error(ERR_OPTION);
-        }
-    }while(option!='q');
-
     return 0;
-}
+}   
