@@ -170,7 +170,7 @@ void showPlayers(Agency agency){
 }
 
 /*
-Función para comprobar el formato de nombre en general, donde se modifica el booleano.
+Función que comprueba el formato de nombre en general, donde se modifica el booleano.
 names: los distintos nombres que recibe la función para comprobar su formato.
 correctFormat: booleano que comprueba si el formato es correcto
 return: void
@@ -203,7 +203,7 @@ void checkNameFormat(string names, bool &correctFormat){
 }
 
 /*
-Función que comprueba si el nombre cumple los requisitos para añadir al
+Función para comprobar si el nombre cumple los requisitos para añadir al
 jugador
 fullName: Nombre del jugador o del equipo
 agency: registro de la agencia declarada en main
@@ -240,7 +240,7 @@ bool checkName(string fullName, Agency agency){
 }
 
 /*
-Funcion para poder añadir jugadores adentro de la agencia
+Función para poder añadir jugadores adentro de la agencia
 agency: registro de la agencia declarado en main. 
 return: void
 */
@@ -284,7 +284,7 @@ void addPlayer(Agency &agency){
 }
 
 /*
-Función para comprobar si el id introducido pertenece a algun jugador
+Función que comprueba si el id introducido pertenece a algun jugador
 registrado.
 agency: registro de la agencia
 id: cadena donde se almacena el id del jugador deseado.
@@ -311,7 +311,7 @@ bool checkId(Agency agency, string id){
 }
 
 /*
-Función para encontrar la posicion en la que esta el jugador deseado en función de su id
+Función que encuentra la posicion en la que esta el jugador deseado en función de su id
 agency: registro de la agencia.
 id: cadena del id del jugador deseado.
 return: el indice del vector en el que se encuentra el jugador
@@ -330,7 +330,7 @@ int findPlayer(Agency agency, string id){
 }
 
 /*
-Función para borrar jugadores de la agencia
+Función que borra jugadores de la agencia
 agency: registro de la agencia.
 return: void
 */
@@ -354,7 +354,7 @@ void deletePlayer(Agency &agency){
 }
 
 /*
-Función para comprobar que el formato de las valoraciones esta correcto.
+Función que verifica si el formato de las valoraciones esta correcto.
 ratings: cadena de valoraciones del jugador.
 return: un bool que es true si está correcto
 */
@@ -400,7 +400,7 @@ bool checkFormat(string ratings){
 }
 
 /*
-Función para comprobar que las valoraciones entran dentro del rango establecido.
+Función que verifica que las valoraciones entran dentro del rango establecido.
 ratings: cadena de valoraciones que introduce el usuario.
 tempRatings: vector de valoraciones temporal para almacenar esas valoraciones.
 return: un bool que dice si se cumple el rango o no.
@@ -581,44 +581,46 @@ return: void
 void parseData(Agency &agency, string line){
     stringstream data(line);
     Player tempPlayer;
-    string name;
-    string team;
-    string dorsal;
-    string position;
-    string ratings;
-    int rating;
-    bool isNameCorrect;
-
-    getline(data, name, ',');
-    isNameCorrect = checkName(name, agency);
-    
+    string playerData;
+    bool isNameCorrect = true;
+    bool isRatingCorrect = true;
+    getline(data, playerData, ',');
+    isNameCorrect = checkName(playerData, agency);
     if(isNameCorrect){
-        tempPlayer.name = name;
-        getline(data, team, ',');
-        isNameCorrect = checkName(team, agency);
-        
+        tempPlayer.name = playerData;
+        getline(data, playerData, ',');
+        isNameCorrect = checkName(playerData, agency);
         if(isNameCorrect){
-            tempPlayer.team = team;
-            getline(data, dorsal, ',');
-            
-            if(dorsal >= "0" && dorsal <= "99"){
-                tempPlayer.dorsal = stoi(dorsal);
-                getline(data, position, ',');
-                
-                if(position >= "1" && position <= "5"){
-                    tempPlayer.position = stoi(position);
-                    
-                    while(getline(data, ratings, ',')){
-                        rating = stoi(ratings);
-                        
-                        if(rating >= -50 && rating <= 50){
-                            tempPlayer.ratings.push_back(rating);
+            tempPlayer.team = playerData;
+            getline(data, playerData, ',');
+            if(playerData < "0" || playerData > "99"){
+                error(ERR_DORSAL);
+            }
+            else{
+                tempPlayer.dorsal = stoi(playerData);
+                getline(data, playerData, ',');
+                if(playerData < "1" || playerData > "5"){
+                    error(ERR_POSITION);
+                }
+                else{
+                    tempPlayer.position = stoi(playerData);
+                    if(getline(data, playerData)){
+                        isRatingCorrect = checkFormat(playerData);
+                        if(isRatingCorrect){
+                            isRatingCorrect = checkRange(playerData, tempPlayer.ratings);
+                            if(isRatingCorrect){
+                                tempPlayer.id = agency.nextId;
+                                agency.players.push_back(tempPlayer);
+                                agency.nextId ++;
+                            }
                         }
                     }
-                    
+                    else{
                     tempPlayer.id = agency.nextId;
                     agency.players.push_back(tempPlayer);
                     agency.nextId ++;
+                    }
+
                 }
             }
         }
@@ -688,7 +690,6 @@ void exportCsv(Agency agency){
             }
         }
     }
-    
 }
 
 /*
@@ -884,7 +885,7 @@ void importFromArgument(Agency &agency, int argumentType, string fileName){
 }
 
 /*
-Función para procesar la cantidad de argumentos introducidos.
+Función que procesa la cantidad de argumentos introducidos.
 argc y argv[]: parámetros de argumentos del programa.
 importFile: cadena usada especialmente para ficheros de texto donde se almacena su nombre / ubicación.
 loadFile: cadena usada especialmente para ficheros binarios donde se almacena su nombre / ubicación. 
@@ -914,7 +915,6 @@ bool processArguments(int argc, char *argv[], string &importFile, string &loadFi
             isCorrect = false; // Argumento desconocido
         }
     }
-
     return isCorrect;
 }
 
@@ -942,7 +942,6 @@ int main(int argc, char *argv[]){
         if(importFile != ""){
             importFromArgument(agency, 0, importFile);
         }
-    
         do{
             showMainMenu();
             cin >> option;
@@ -973,6 +972,5 @@ int main(int argc, char *argv[]){
             }
         }while(option!='q');
     }
-
     return 0;
-}   
+}
